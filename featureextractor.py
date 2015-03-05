@@ -5,6 +5,27 @@ printed = False
 @python_2_unicode_compatible
 class FeatureExtractor(object):
     @staticmethod
+    def levenshtein(s1, s2):
+        if len(s1) < len(s2):
+            return FeatureExtractor.levenshtein(s2, s1)
+     
+        # len(s1) >= len(s2)
+        if len(s2) == 0:
+            return len(s1)
+     
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+                deletions = current_row[j] + 1       # than s2
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+ 
+        return previous_row[-1]
+
+    @staticmethod
     def _check_informative(feat, underscore_is_informative=False):
         """
         Check whether a feature is informative
@@ -60,7 +81,6 @@ class FeatureExtractor(object):
 
         result = []
 
-
         global printed
         if not printed:
             print("This is not a very good feature extractor!")
@@ -78,6 +98,12 @@ class FeatureExtractor(object):
                 for feat in feats:
                     result.append('STK_0_FEATS_' + feat)
 
+            if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+                result.append('STK_0_POSTAG_' + token['tag'])
+
+            if 'lemma' in token and FeatureExtractor._check_informative(token['lemma']):
+                result.append('STK_0_LEMMA_' + token['lemma'])
+
             # Left most, right most dependency of stack[0]
             dep_left_most, dep_right_most = FeatureExtractor.find_left_right_dependencies(stack_idx0, arcs)
 
@@ -85,6 +111,13 @@ class FeatureExtractor(object):
                 result.append('STK_0_LDEP_' + dep_left_most)
             if FeatureExtractor._check_informative(dep_right_most):
                 result.append('STK_0_RDEP_' + dep_right_most)
+
+        if len(stack) > 1:
+            stack_idx1 = stack[-2]
+            token = tokens[stack_idx1]
+
+            if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+                result.append('STK_1_POSTAG_' + token['tag'])
 
         if buffer:
             buffer_idx0 = buffer[0]
@@ -97,11 +130,51 @@ class FeatureExtractor(object):
                 for feat in feats:
                     result.append('BUF_0_FEATS_' + feat)
 
+            if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+                result.append('BUF_0_POSTAG_' + token['tag'])
+
+            if 'lemma' in token and FeatureExtractor._check_informative(token['lemma']):
+                result.append('BUF_0_LEMMA_' + token['lemma'])
+
             dep_left_most, dep_right_most = FeatureExtractor.find_left_right_dependencies(buffer_idx0, arcs)
 
             if FeatureExtractor._check_informative(dep_left_most):
                 result.append('BUF_0_LDEP_' + dep_left_most)
             if FeatureExtractor._check_informative(dep_right_most):
                 result.append('BUF_0_RDEP_' + dep_right_most)
+
+        if len(buffer) > 1:
+            buffer_idx1 = buffer[1]
+            token = tokens[buffer_idx1]
+
+            if FeatureExtractor._check_informative(token['word'], True):
+                result.append('BUF_1_FORM_' + token['word'])
+
+            if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+                result.append('BUF_1_POSTAG_' + token['tag'])
+
+        # if len(buffer) > 2:
+        #     buffer_idx2 = buffer[2]
+        #     token = tokens[buffer_idx2]
+
+        #     if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+        #         result.append('BUF_2_POSTAG_' + token['tag'])
+
+        if len(buffer) > 3:
+            buffer_idx3 = buffer[3]
+            token = tokens[buffer_idx3]
+
+            if 'tag' in token and FeatureExtractor._check_informative(token['tag']):
+                result.append('BUF_3_POSTAG_' + token['tag'])
+
+        if stack and buffer:
+            stack_idx0 = stack[-1]
+            token1 = tokens[stack_idx0]
+
+            buffer_idx0 = buffer[0]
+            token2 = tokens[buffer_idx0]
+
+            if token1['word'] != None and token2['word'] != None:
+                result.append('DISTANCE' + str(FeatureExtractor.levenshtein(token1['word'], token2['word'])))
 
         return result
