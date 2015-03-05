@@ -4,26 +4,26 @@ printed = False
 
 @python_2_unicode_compatible
 class FeatureExtractor(object):
-    @staticmethod
-    def levenshtein(s1, s2):
-        if len(s1) < len(s2):
-            return FeatureExtractor.levenshtein(s2, s1)
+    # @staticmethod
+    # def levenshtein(s1, s2):
+    #     if len(s1) < len(s2):
+    #         return FeatureExtractor.levenshtein(s2, s1)
      
-        # len(s1) >= len(s2)
-        if len(s2) == 0:
-            return len(s1)
+    #     # len(s1) >= len(s2)
+    #     if len(s2) == 0:
+    #         return len(s1)
      
-        previous_row = range(len(s2) + 1)
-        for i, c1 in enumerate(s1):
-            current_row = [i + 1]
-            for j, c2 in enumerate(s2):
-                insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
-                deletions = current_row[j] + 1       # than s2
-                substitutions = previous_row[j] + (c1 != c2)
-                current_row.append(min(insertions, deletions, substitutions))
-            previous_row = current_row
+    #     previous_row = range(len(s2) + 1)
+    #     for i, c1 in enumerate(s1):
+    #         current_row = [i + 1]
+    #         for j, c2 in enumerate(s2):
+    #             insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+    #             deletions = current_row[j] + 1       # than s2
+    #             substitutions = previous_row[j] + (c1 != c2)
+    #             current_row.append(min(insertions, deletions, substitutions))
+    #         previous_row = current_row
  
-        return previous_row[-1]
+    #     return previous_row[-1]
 
     @staticmethod
     def _check_informative(feat, underscore_is_informative=False):
@@ -169,12 +169,9 @@ class FeatureExtractor(object):
 
         if stack and buffer:
             stack_idx0 = stack[-1]
-            token1 = tokens[stack_idx0]
 
             buffer_idx0 = buffer[0]
-            token2 = tokens[buffer_idx0]
 
-            if token1['word'] != None and token2['word'] != None:
-                result.append('DISTANCE' + str(FeatureExtractor.levenshtein(token1['word'], token2['word'])))
+            result.append('DISTANCE_' + str(stack_idx0 - buffer_idx0))
 
         return result
