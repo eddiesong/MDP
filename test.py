@@ -6,7 +6,7 @@ from featureextractor import FeatureExtractor
 from transition import Transition
 
 if __name__ == '__main__':
-    data = dataset.get_swedish_train_corpus().parsed_sents()
+    data = dataset.get_english_train_corpus().parsed_sents()
     random.seed(1234)
     subdata = random.sample(data, 200)
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
         tp.train(subdata)
         tp.save('swedish.model')
 
-        testdata = dataset.get_swedish_test_corpus().parsed_sents()
+        testdata = dataset.get_english_dev_corpus().parsed_sents()
         # tp = TransitionParser.load('badfeatures.model')
 
         parsed = tp.parse(testdata)
